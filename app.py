@@ -693,9 +693,10 @@ def fetch_supporters() -> list[str]:
     rows = execute_query(
         db,
         """
-        SELECT DISTINCT supporter_name
+        SELECT supporter_name
         FROM support_records
         WHERE TRIM(supporter_name) <> ''
+        GROUP BY supporter_name
         ORDER BY LOWER(supporter_name) ASC
         """
     ).fetchall()
@@ -717,9 +718,10 @@ def fetch_customers() -> list[str]:
     rows = execute_query(
         db,
         """
-        SELECT DISTINCT customer_name
+        SELECT customer_name
         FROM support_records
         WHERE TRIM(customer_name) <> ''
+        GROUP BY customer_name
         ORDER BY LOWER(customer_name) ASC
         """
     ).fetchall()
