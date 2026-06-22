@@ -1,0 +1,261 @@
+<!doctype html>
+<html lang="vi">
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>{{ app_title }}</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='styles.css') }}">
+</head>
+<body>
+    <div class="page-shell">
+        <header class="hero">
+            <div class="hero__copy">
+                <p class="eyebrow">Công cụ nội bộ ghi nhận hỗ trợ khách hàng</p>
+                <h1>{{ app_title }}</h1>
+                <p class="hero__description">
+                    Màn hình được rút gọn để bạn chỉ cần nhập lượt hỗ trợ hằng ngày,
+                    xem lại danh sách đã nhập, chỉnh sửa khi cần và xuất Excel cuối tuần.
+                </p>
+            </div>
+            <div class="hero__aside">
+                <div class="hero-note">
+                    <span class="hero-note__label">Luồng dùng nhanh</span>
+                    <strong>Nhập mỗi ngày, xuất Excel khi cần</strong>
+                    <p>Chọn khoảng ngày, lọc danh sách, rồi tải file Excel theo đúng dữ liệu đang xem.</p>
+                </div>
+            </div>
+        </header>
+
+        <section class="workspace-grid">
+            <div class="stack">
+                <article class="panel">
+                    <div class="panel__header">
+                        <div>
+                            <h2>Nhập lượt hỗ trợ hằng ngày</h2>
+                            <p>Ghi nhận nhanh từng lượt hỗ trợ để cuối tuần không phải tổng hợp lại thủ công.</p>
+                        </div>
+                        <span class="panel__badge" id="entryFormBadge">Thêm mới</span>
+                    </div>
+
+                    <form id="entryForm" class="form-grid form-grid--entry">
+                        <input type="hidden" id="entryId">
+
+                        <label class="field">
+                            <span>Ngày hỗ trợ</span>
+                            <input type="date" id="supportDate" required>
+                        </label>
+
+                        <label class="field">
+                            <span>Tên khách hàng / đơn vị</span>
+                            <input type="text" id="customerName" list="customerSuggestions" placeholder="Có thể để trống nếu chưa cần ghi">
+                            <small class="field__hint">Cho phép để trống.</small>
+                        </label>
+
+                        <label class="field">
+                            <span>Dịch vụ hỗ trợ</span>
+                            <select id="serviceId" required>
+                                <option value="">Chọn dịch vụ</option>
+                            </select>
+                        </label>
+
+                        <label class="field">
+                            <span>Kênh hỗ trợ</span>
+                            <select id="channel" required>
+                                {% for channel in channel_options %}
+                                <option value="{{ channel }}">{{ channel }}</option>
+                                {% endfor %}
+                            </select>
+                        </label>
+
+                        <label class="field">
+                            <span>Người hỗ trợ</span>
+                            <select id="supporterSelect" required>
+                                <option value="">Chọn người hỗ trợ</option>
+                                {% for supporter in supporter_options %}
+                                <option value="{{ supporter.name }}">{{ supporter.name }}</option>
+                                {% endfor %}
+                                <option value="__other__">Khác</option>
+                            </select>
+                        </label>
+
+                        <label class="field hidden" id="supporterOtherField">
+                            <span>Nhập tên người hỗ trợ khác</span>
+                            <input type="text" id="supporterOtherName" placeholder="Nhập tên người hỗ trợ">
+                        </label>
+
+                        <label class="field">
+                            <span>Người gửi hỗ trợ</span>
+                            <input type="text" id="requesterName" list="requesterSuggestions" placeholder="Gõ để tìm nhanh hoặc nhập tên mới">
+                            <small class="field__hint">Có thể để trống. Gõ vài ký tự để tìm nhanh trong danh sách.</small>
+                        </label>
+
+                        <label class="field">
+                            <span>Trạng thái</span>
+                            <select id="status" required>
+                                {% for status in status_options %}
+                                <option value="{{ status }}">{{ status }}</option>
+                                {% endfor %}
+                            </select>
+                        </label>
+
+                        <label class="field field--wide">
+                            <span>Nội dung hỗ trợ</span>
+                            <textarea id="supportContent" rows="4" placeholder="Có thể để trống hoặc chọn nhanh từ gợi ý bên dưới..."></textarea>
+                            <small class="field__hint">Cho phép để trống. Khi chọn dịch vụ, app sẽ hiển thị gợi ý nội dung tương ứng.</small>
+                        </label>
+
+                        <div class="suggestion-box field--wide">
+                            <div class="suggestion-box__header">
+                                <strong>Gợi ý nội dung theo dịch vụ</strong>
+                                <button type="button" class="button button--ghost" id="applySuggestionButton">Chèn gợi ý</button>
+                            </div>
+                            <select id="supportContentSuggestion">
+                                <option value="">Chọn dịch vụ để xem gợi ý</option>
+                            </select>
+                            <div class="suggestion-box__preview" id="supportSuggestionPreview">
+                                Chọn dịch vụ hỗ trợ để xem các nội dung gợi ý phù hợp.
+                            </div>
+                        </div>
+
+                        <label class="field field--wide">
+                            <span>Ghi chú</span>
+                            <textarea id="notes" rows="3" placeholder="Thông tin thêm nếu cần..."></textarea>
+                        </label>
+
+                        <div class="form-actions form-actions--wide">
+                            <button type="submit" class="button">Lưu lượt hỗ trợ</button>
+                            <button type="button" class="button button--secondary hidden" id="cancelEntryEditButton">Hủy chỉnh sửa</button>
+                        </div>
+                    </form>
+
+                    <p class="form-message" id="entryFormMessage"></p>
+                    <datalist id="customerSuggestions"></datalist>
+                    <datalist id="requesterSuggestions"></datalist>
+                </article>
+            </div>
+
+            <div class="stack">
+                <article class="panel">
+                    <div class="panel__header">
+                        <div>
+                            <h2>Danh sách lượt hỗ trợ</h2>
+                            <p id="entriesSummary">Đang tải dữ liệu...</p>
+                        </div>
+                    </div>
+
+                    <div class="table-wrap">
+                        <table class="data-table">
+                            <thead>
+                                <tr>
+                                    <th>Ngày</th>
+                                    <th>Khách hàng / đơn vị</th>
+                                    <th>Người gửi hỗ trợ</th>
+                                    <th>Dịch vụ</th>
+                                    <th>Nội dung hỗ trợ</th>
+                                    <th>Kênh</th>
+                                    <th>Người hỗ trợ</th>
+                                    <th>Trạng thái</th>
+                                    <th>Ghi chú</th>
+                                    <th>Thao tác</th>
+                                </tr>
+                            </thead>
+                            <tbody id="entriesTableBody"></tbody>
+                        </table>
+                    </div>
+                </article>
+            </div>
+        </section>
+
+        <section class="panel">
+            <div class="panel__header">
+                <div>
+                    <h2>Lọc dữ liệu và xuất Excel</h2>
+                    <p>Chọn tuần, tháng hoặc khoảng ngày để xem danh sách và xuất báo cáo.</p>
+                </div>
+                <div class="shortcut-row">
+                    <button type="button" class="button button--ghost" id="presetWeekButton">Tuần này</button>
+                    <button type="button" class="button button--ghost" id="presetMonthButton">Tháng này</button>
+                    <button type="button" class="button button--ghost" id="presetAllButton">Toàn bộ</button>
+                </div>
+            </div>
+
+            <form id="filtersForm" class="form-grid form-grid--filters">
+                <label class="field">
+                    <span>Tuần</span>
+                    <input type="week" id="weekPicker">
+                </label>
+
+                <label class="field">
+                    <span>Tháng</span>
+                    <input type="month" id="monthPicker">
+                </label>
+
+                <label class="field">
+                    <span>Từ ngày</span>
+                    <input type="date" id="dateFrom" name="date_from" value="{{ default_filters.date_from }}">
+                </label>
+
+                <label class="field">
+                    <span>Đến ngày</span>
+                    <input type="date" id="dateTo" name="date_to" value="{{ default_filters.date_to }}">
+                </label>
+
+                <label class="field">
+                    <span>Dịch vụ</span>
+                    <select id="serviceFilter" name="service_id">
+                        <option value="">Tất cả dịch vụ</option>
+                    </select>
+                </label>
+
+                <label class="field">
+                    <span>Trạng thái</span>
+                    <select id="statusFilter" name="status">
+                        <option value="">Tất cả trạng thái</option>
+                        {% for status in status_options %}
+                        <option value="{{ status }}">{{ status }}</option>
+                        {% endfor %}
+                    </select>
+                </label>
+
+                <label class="field">
+                    <span>Người hỗ trợ</span>
+                    <select id="supporterFilter" name="supporter_name">
+                        <option value="">Tất cả người hỗ trợ</option>
+                    </select>
+                </label>
+
+                <div class="field field--actions">
+                    <span>Thao tác</span>
+                    <div class="button-row">
+                        <button type="submit" class="button">Áp dụng bộ lọc</button>
+                        <button type="button" class="button button--secondary" id="resetFiltersButton">Làm mới</button>
+                    </div>
+                </div>
+            </form>
+
+            <div class="export-row">
+                <div class="export-row__text">
+                    <strong>Xuất đúng dữ liệu đang lọc</strong>
+                    <p>File Excel gồm danh sách chi tiết, tổng hợp theo dịch vụ, thống kê người gửi hỗ trợ và sheet nội dung gợi ý.</p>
+                </div>
+                <div class="button-row">
+                    <button type="button" class="button" id="exportExcelButton">Xuất Excel</button>
+                </div>
+            </div>
+        </section>
+    </div>
+
+    <div id="toastContainer" class="toast-container" aria-live="polite" aria-atomic="true"></div>
+
+    <script>
+        window.APP_CONFIG = {{ {
+            "defaultFilters": default_filters,
+            "channels": channel_options,
+            "supporterOptions": supporter_options,
+            "requesterOptions": requester_options,
+            "statuses": status_options
+        } | tojson }};
+    </script>
+    <script src="{{ url_for('static', filename='app.js') }}" defer></script>
+</body>
+</html>

@@ -1,0 +1,21 @@
+services:
+  - type: web
+    name: bao-cao-ho-tro
+    runtime: python
+    plan: starter
+    buildCommand: pip install -r requirements.txt
+    startCommand: gunicorn app:app --workers 1 --threads 4
+    healthCheckPath: /
+    envVars:
+      - key: PYTHON_VERSION
+        value: 3.11.9
+      - key: APP_DEBUG
+        value: "0"
+      - key: APP_DATA_DIR
+        value: /var/data
+      - key: WEB_CONCURRENCY
+        value: "1"
+    disk:
+      name: support-data
+      mountPath: /var/data
+      sizeGB: 1
