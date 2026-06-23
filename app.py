@@ -73,7 +73,7 @@ REQUESTER_OPTIONS = [
     {"name": "Phan Hồng Ân", "area": "MTH"},
     {"name": "Nguyễn Thanh Nhàn", "area": "SDC"},
     {"name": "Lê Thành Tâm", "area": "SDC"},
-    {"name": "Võ Quốc Vân", "area": "SDC"},
+    {"name": "Võ Quốc Văn", "area": "SDC"},
     {"name": "Nguyễn Minh Trí", "area": "TNG"},
     {"name": "Lưu Hớn Đạt", "area": "TBH"},
     {"name": "Trần Minh Quân", "area": "TBH"},

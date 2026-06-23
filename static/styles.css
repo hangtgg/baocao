@@ -470,6 +470,56 @@ button {
     gap: 8px;
 }
 
+.pagination {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 12px;
+    margin-top: 14px;
+    padding-top: 14px;
+    border-top: 1px dashed rgba(23, 107, 93, 0.14);
+}
+
+.pagination__summary {
+    color: var(--muted);
+    font-size: 0.92rem;
+    font-weight: 700;
+}
+
+.pagination__controls {
+    display: flex;
+    flex-wrap: wrap;
+    justify-content: flex-end;
+    gap: 8px;
+}
+
+.pagination__button {
+    min-width: 42px;
+    padding: 8px 12px;
+    border: 1px solid rgba(23, 107, 93, 0.14);
+    border-radius: 999px;
+    background: rgba(255, 255, 255, 0.9);
+    color: var(--accent-strong);
+    font-weight: 700;
+    box-shadow: none;
+}
+
+.pagination__button:hover:not(:disabled) {
+    background: rgba(23, 107, 93, 0.08);
+}
+
+.pagination__button:disabled {
+    opacity: 0.45;
+    cursor: not-allowed;
+}
+
+.pagination__button--active {
+    border-color: transparent;
+    background: linear-gradient(135deg, var(--accent), var(--accent-strong));
+    color: #ffffff;
+    box-shadow: 0 10px 22px rgba(23, 107, 93, 0.18);
+}
+
 .link-button {
     padding: 0;
     border: none;
@@ -696,7 +746,8 @@ button {
 
     .panel__header,
     .export-row,
-    .suggestion-box__header {
+    .suggestion-box__header,
+    .pagination {
         flex-direction: column;
         align-items: stretch;
     }

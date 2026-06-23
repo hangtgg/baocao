@@ -98,6 +98,95 @@ Remove-Item data\support_tracker.db
 python app.py
 ```
 
+## Chuyen du lieu cu tu SQLite local len PostgreSQL
+
+Neu ban da nhap du lieu o may local va muon dua len database Render, repo nay da co san script:
+
+```text
+migrate_sqlite_to_postgres.py
+```
+
+### Nguyen tac URL rat quan trong
+
+- App dang chay tren Render: dung `Internal Database URL`
+- Script migrate chay tu may cua ban: dung `External Database URL`
+
+Ly do:
+
+- `Internal Database URL` chi dung cho cac service chay ben trong Render cung region
+- May tinh local cua ban nam ngoai Render, nen can `External Database URL`
+
+### Buoc 1: Kiem tra file SQLite local
+
+Mac dinh script se doc file:
+
+```text
+data/support_tracker.db
+```
+
+Neu file cua ban nam cho khac, co the truyen them `--sqlite-path`.
+
+### Buoc 2: Lay External Database URL tu Render
+
+1. Mo PostgreSQL database tren Render
+2. Bam `Connect`
+3. Copy `External Database URL`
+
+Khong dung:
+
+- `Internal Database URL`
+- `PSQL Command`
+- ten muc `External Database URL`
+
+### Buoc 3: Chay migrate
+
+Khuyen nghi cho lan migrate dau tien len Render:
+
+```powershell
+python migrate_sqlite_to_postgres.py --database-url "EXTERNAL_DATABASE_URL" --clear-target --yes
+```
+
+Neu ban da set bien moi truong truoc:
+
+```powershell
+$env:DATABASE_URL="EXTERNAL_DATABASE_URL"
+python migrate_sqlite_to_postgres.py --clear-target --yes
+```
+
+### Y nghia cac tuy chon
+
+- `--database-url`: URL PostgreSQL dich
+- `--sqlite-path`: duong dan toi file SQLite local
+- `--clear-target`: xoa du lieu hien co tren PostgreSQL roi import lai tu dau
+- `--yes`: bo qua hoi xac nhan khi da dung `--clear-target`
+
+### Khi nao nen dung `--clear-target`
+
+Nen dung khi:
+
+- Database Render hien dang moi tao
+- Hoac trong do dang co du lieu mau / du lieu sai ban muon thay bang du lieu local
+
+Khong bat buoc dung khi:
+
+- Ban chi muon merge them vao database dich
+
+Tuy vay, voi lan dua du lieu local len Render dau tien, `--clear-target --yes` la de hieu va an toan nhat de tranh bi tron du lieu mau.
+
+### Sau khi migrate xong
+
+1. Giu web service Render cua app tro den cung database do
+2. Trong `Environment` cua web service, dat `DATABASE_URL` bang `Internal Database URL`
+3. Redeploy app
+
+### Luong lam viec de nghi
+
+1. Backup file local `data/support_tracker.db`
+2. Chay script migrate bang `External Database URL`
+3. Kiem tra so ban ghi duoc import trong log script
+4. Mo app tren Render va kiem tra du lieu
+5. Sau nay chi can nhap truc tiep tren Render, khong can migrate lai tru khi ban van tiep tuc nhap o local
+
 ## Deploy len Render voi Postgres
 
 App da duoc sua de:
@@ -162,6 +251,7 @@ Tai lieu chinh thuc:
 ```text
 BAOCAO/
 |-- app.py
+|-- migrate_sqlite_to_postgres.py
 |-- render.yaml
 |-- requirements.txt
 |-- README.md

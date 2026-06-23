@@ -1,4 +1,5 @@
 const APP_CONFIG = window.APP_CONFIG || {};
+const ENTRY_PAGE_SIZE = 10;
 
 const state = {
     filters: { ...(APP_CONFIG.defaultFilters || {}) },
@@ -7,6 +8,7 @@ const state = {
     supporters: [],
     customers: [],
     entries: [],
+    entryPage: 1,
     editingEntryId: null
 };
 
@@ -16,7 +18,7 @@ document.addEventListener("DOMContentLoaded", async () => {
     captureDom();
     bindEvents();
     initializeDefaults();
-    await loadData();
+    await loadData({ resetPage: true });
 });
 
 function captureDom() {
@@ -58,6 +60,7 @@ function captureDom() {
 
     dom.entriesSummary = document.getElementById("entriesSummary");
     dom.entriesTableBody = document.getElementById("entriesTableBody");
+    dom.entriesPagination = document.getElementById("entriesPagination");
     dom.toastContainer = document.getElementById("toastContainer");
 }
 
@@ -65,7 +68,7 @@ function bindEvents() {
     dom.filtersForm.addEventListener("submit", async (event) => {
         event.preventDefault();
         syncPresetPickersWithRange(dom.dateFrom.value, dom.dateTo.value);
-        await loadData();
+        await loadData({ resetPage: true });
     });
 
     dom.weekPicker.addEventListener("change", () => {
@@ -93,17 +96,17 @@ function bindEvents() {
         dom.serviceFilter.value = "";
         dom.statusFilter.value = "";
         dom.supporterFilter.value = "";
-        await loadData();
+        await loadData({ resetPage: true });
     });
 
     dom.presetWeekButton.addEventListener("click", async () => {
         applyCurrentWeekPreset();
-        await loadData();
+        await loadData({ resetPage: true });
     });
 
     dom.presetMonthButton.addEventListener("click", async () => {
         applyCurrentMonthPreset();
-        await loadData();
+        await loadData({ resetPage: true });
     });
 
     dom.presetAllButton.addEventListener("click", async () => {
@@ -114,7 +117,7 @@ function bindEvents() {
         dom.serviceFilter.value = "";
         dom.statusFilter.value = "";
         dom.supporterFilter.value = "";
-        await loadData();
+        await loadData({ resetPage: true });
     });
 
     dom.exportExcelButton.addEventListener("click", () => {
@@ -132,6 +135,7 @@ function bindEvents() {
     dom.applySuggestionButton.addEventListener("click", applySelectedSuggestion);
     dom.cancelEntryEditButton.addEventListener("click", resetEntryForm);
     dom.entriesTableBody.addEventListener("click", handleEntryTableClick);
+    dom.entriesPagination.addEventListener("click", handleEntryPaginationClick);
 }
 
 function initializeDefaults() {
@@ -144,7 +148,8 @@ function initializeDefaults() {
     syncPresetPickersWithRange(dom.dateFrom.value, dom.dateTo.value);
 }
 
-async function loadData() {
+async function loadData(options = {}) {
+    const { resetPage = false } = options;
     const query = buildQueryString(readFilters());
     dom.entriesSummary.textContent = "Đang tải dữ liệu...";
 
@@ -156,6 +161,9 @@ async function loadData() {
         state.supporters = data.supporters || [];
         state.customers = data.customers || [];
         state.entries = data.entries || [];
+        if (resetPage) {
+            state.entryPage = 1;
+        }
 
         renderFilters();
         renderEntryFormOptions();
@@ -232,9 +240,11 @@ function renderSuggestions() {
 
 function renderEntriesTable() {
     const totalEntries = state.entries.length;
-    dom.entriesSummary.textContent = `Hiển thị ${totalEntries} lượt hỗ trợ ${buildPeriodText()}.`;
+    const totalPages = Math.max(1, Math.ceil(totalEntries / ENTRY_PAGE_SIZE));
+    state.entryPage = Math.min(Math.max(state.entryPage, 1), totalPages);
 
     if (!totalEntries) {
+        dom.entriesSummary.textContent = `Hiển thị 0 lượt hỗ trợ ${buildPeriodText()}.`;
         dom.entriesTableBody.innerHTML = `
             <tr>
                 <td colspan="10">
@@ -242,10 +252,16 @@ function renderEntriesTable() {
                 </td>
             </tr>
         `;
+        renderEntryPagination(0, 1, 1);
         return;
     }
 
-    dom.entriesTableBody.innerHTML = state.entries
+    const startIndex = (state.entryPage - 1) * ENTRY_PAGE_SIZE;
+    const pagedEntries = state.entries.slice(startIndex, startIndex + ENTRY_PAGE_SIZE);
+    const endIndex = startIndex + pagedEntries.length;
+    dom.entriesSummary.textContent = `Hiển thị ${startIndex + 1}-${endIndex}/${totalEntries} lượt hỗ trợ ${buildPeriodText()}.`;
+
+    dom.entriesTableBody.innerHTML = pagedEntries
         .map(
             (entry) => `
                 <tr>
@@ -268,6 +284,88 @@ function renderEntriesTable() {
             `
         )
         .join("");
+
+    renderEntryPagination(totalEntries, totalPages, state.entryPage);
+}
+
+function renderEntryPagination(totalEntries, totalPages, currentPage) {
+    if (!dom.entriesPagination) {
+        return;
+    }
+
+    if (!totalEntries || totalPages <= 1) {
+        dom.entriesPagination.innerHTML = "";
+        dom.entriesPagination.classList.add("hidden");
+        return;
+    }
+
+    const pageButtons = buildEntryPageNumbers(totalPages, currentPage)
+        .map((page) => {
+            const isCurrent = page === currentPage;
+            return `
+                <button
+                    type="button"
+                    class="pagination__button ${isCurrent ? "pagination__button--active" : ""}"
+                    data-page="${page}"
+                    ${isCurrent ? 'aria-current="page"' : ""}
+                >
+                    ${page}
+                </button>
+            `;
+        })
+        .join("");
+
+    dom.entriesPagination.innerHTML = `
+        <div class="pagination__summary">Trang ${currentPage}/${totalPages}</div>
+        <div class="pagination__controls">
+            <button
+                type="button"
+                class="pagination__button"
+                data-page="${currentPage - 1}"
+                ${currentPage === 1 ? "disabled" : ""}
+            >
+                Trước
+            </button>
+            ${pageButtons}
+            <button
+                type="button"
+                class="pagination__button"
+                data-page="${currentPage + 1}"
+                ${currentPage === totalPages ? "disabled" : ""}
+            >
+                Sau
+            </button>
+        </div>
+    `;
+    dom.entriesPagination.classList.remove("hidden");
+}
+
+function buildEntryPageNumbers(totalPages, currentPage) {
+    const startPage = Math.max(1, currentPage - 2);
+    const endPage = Math.min(totalPages, startPage + 4);
+    const normalizedStartPage = Math.max(1, endPage - 4);
+    const pages = [];
+
+    for (let page = normalizedStartPage; page <= endPage; page += 1) {
+        pages.push(page);
+    }
+    return pages;
+}
+
+function handleEntryPaginationClick(event) {
+    const button = event.target.closest("button[data-page]");
+    if (!button || button.disabled) {
+        return;
+    }
+
+    const nextPage = Number(button.dataset.page);
+    if (!Number.isInteger(nextPage) || nextPage < 1 || nextPage === state.entryPage) {
+        return;
+    }
+
+    state.entryPage = nextPage;
+    renderEntriesTable();
+    dom.entriesPagination.scrollIntoView({ behavior: "smooth", block: "nearest" });
 }
 
 async function handleEntrySubmit(event) {
@@ -295,7 +393,7 @@ async function handleEntrySubmit(event) {
         });
         showToast(isEditing ? "Đã cập nhật lượt hỗ trợ." : "Đã thêm lượt hỗ trợ.");
         resetEntryForm();
-        await loadData();
+        await loadData({ resetPage: !isEditing });
     } catch (error) {
         setFormMessage(error.message, true);
         showToast(error.message || "Không lưu được lượt hỗ trợ.", "error");
