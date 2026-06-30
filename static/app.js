@@ -265,21 +265,21 @@ function renderEntriesTable() {
         .map(
             (entry) => `
                 <tr>
-                    <td>${escapeHtml(formatDisplayDate(entry.support_date))}</td>
-                    <td>${renderOptionalCell(entry.customer_name)}</td>
-                    <td>${renderOptionalCell(entry.requester_name)}</td>
-                    <td>${escapeHtml(entry.service_name)}</td>
-                    <td><div class="cell-content">${renderOptionalCell(entry.support_content)}</div></td>
-                    <td>${escapeHtml(entry.channel)}</td>
-                    <td>${escapeHtml(entry.supporter_name)}</td>
-                    <td>${renderStatusBadge(entry.status)}</td>
-                    <td><div class="cell-note">${renderOptionalCell(entry.notes)}</div></td>
                     <td>
                         <div class="table-actions">
                             <button type="button" class="link-button" data-action="edit-entry" data-id="${entry.id}">Sửa</button>
                             <button type="button" class="link-button link-button--danger" data-action="delete-entry" data-id="${entry.id}">Xóa</button>
                         </div>
                     </td>
+                    <td>${escapeHtml(entry.supporter_name)}</td>
+                    <td>${renderOptionalCell(entry.customer_name)}</td>
+                    <td>${renderOptionalCell(entry.requester_name)}</td>
+                    <td>${escapeHtml(entry.service_name)}</td>
+                    <td><div class="cell-content">${renderOptionalCell(entry.support_content)}</div></td>
+                    <td>${escapeHtml(entry.channel)}</td>
+                    <td>${renderStatusBadge(entry.status)}</td>
+                    <td><div class="cell-note">${renderOptionalCell(entry.notes)}</div></td>
+                    <td>${escapeHtml(formatDisplayDate(entry.support_date))}</td>
                 </tr>
             `
         )
