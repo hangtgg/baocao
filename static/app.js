@@ -244,7 +244,7 @@ function renderEntriesTable() {
     state.entryPage = Math.min(Math.max(state.entryPage, 1), totalPages);
 
     if (!totalEntries) {
-        dom.entriesSummary.textContent = `Hiển thị 0 lượt hỗ trợ ${buildPeriodText()}.`;
+        dom.entriesSummary.textContent = `Không có lượt hỗ trợ ${buildPeriodText()}.`;
         dom.entriesTableBody.innerHTML = `
             <tr>
                 <td colspan="10">
@@ -259,7 +259,7 @@ function renderEntriesTable() {
     const startIndex = (state.entryPage - 1) * ENTRY_PAGE_SIZE;
     const pagedEntries = state.entries.slice(startIndex, startIndex + ENTRY_PAGE_SIZE);
     const endIndex = startIndex + pagedEntries.length;
-    dom.entriesSummary.textContent = `Hiển thị ${startIndex + 1}-${endIndex}/${totalEntries} lượt hỗ trợ ${buildPeriodText()}.`;
+    dom.entriesSummary.textContent = buildEntrySummaryText(state.entries);
 
     dom.entriesTableBody.innerHTML = pagedEntries
         .map(
@@ -741,6 +741,42 @@ function renderOptionalCell(value) {
         return escapeHtml(value);
     }
     return '<span class="cell-empty">Để trống</span>';
+}
+
+function buildEntrySummaryText(entries) {
+    const totalEntries = entries.length;
+    const serviceCounts = new Map();
+    for (const entry of entries) {
+        const serviceName = String(entry.service_name ?? "").trim();
+        if (!serviceName) {
+            continue;
+        }
+        serviceCounts.set(serviceName, (serviceCounts.get(serviceName) || 0) + 1);
+    }
+
+    const serviceOrder = new Map(
+        (state.services || []).map((service, index) => [service.name, index])
+    );
+
+    const serviceSummary = [...serviceCounts.entries()]
+        .sort((left, right) => {
+            const countDifference = right[1] - left[1];
+            if (countDifference !== 0) {
+                return countDifference;
+            }
+
+            const leftOrder = serviceOrder.has(left[0]) ? serviceOrder.get(left[0]) : Number.MAX_SAFE_INTEGER;
+            const rightOrder = serviceOrder.has(right[0]) ? serviceOrder.get(right[0]) : Number.MAX_SAFE_INTEGER;
+            if (leftOrder !== rightOrder) {
+                return leftOrder - rightOrder;
+            }
+
+            return left[0].localeCompare(right[0], "vi");
+        })
+        .map(([serviceName, count]) => `${serviceName}: ${count}`)
+        .join(", ");
+
+    return `Tổng ca hỗ trợ ${buildPeriodText()}: ${totalEntries} ca, trong đó: ${serviceSummary}.`;
 }
 
 function buildPeriodText() {
